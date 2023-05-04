@@ -11,6 +11,18 @@ import FirebaseFirestoreSwift
 class User: NSObject, Codable {
 
     @DocumentID var id: String?
-    var name: String?
+    var givenName: String?
+    var familyName: String?
+    var username: String?
+    var email: String?
     var reviewList: [Review]?
+    
+    enum CodingKeys: String, CodingKey {
+        case id
+        case givenName
+        case familyName
+        case username
+        case email
+        case reviewList
+    }
 }

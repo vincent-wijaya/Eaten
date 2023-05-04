@@ -7,18 +7,36 @@
 
 import UIKit
 import GooglePlaces
+import MapKit
 
-class MapViewController: UIViewController {
 
-//    @IBOutlet weak var mapView: MapVi!
+class MapViewController: UIViewController, CLLocationManagerDelegate {
+    
+    @IBOutlet weak var mapView: MKMapView!
     
     private var placesClient: GMSPlacesClient!
+    
+    var locationManager: CLLocationManager = CLLocationManager()
+    var currentLocation: CLLocationCoordinate2D?
+    
+//    let mapView = MKMapView(frame: view.bounds)
+//    view.addSubview(mapView)
     
     
     override func viewDidLoad() {
         super.viewDidLoad()
         placesClient = GMSPlacesClient.shared()
         
+        locationManager.desiredAccuracy = kCLLocationAccuracyNearestTenMeters
+        locationManager.distanceFilter = 10
+        locationManager.delegate = self
+        
+        let authorisationStatus = locationManager.authorizationStatus
+        if authorisationStatus != .authorizedWhenInUse {
+            if authorisationStatus == .notDetermined {
+                locationManager.requestWhenInUseAuthorization()
+            }
+        }
 //        let location = // User's location
 //        let filter = GMSPlaceFilter()
 //        filter.type = .restaurant // Specify the type of places you want to retrieve
@@ -58,8 +76,24 @@ class MapViewController: UIViewController {
         // Do any additional setup after loading the view.
     }
     
-//    func focusOn(annotation: MKAnnotation) {
-//        mapView.selectAnnotation(annotation, animated: true)
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        locationManager.startUpdatingLocation()
+    }
+    
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        locationManager.stopUpdatingLocation()
+    }
+    
+    func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
+        currentLocation = locations.last?.coordinate
+    }
+    
+//    func useCurrentLocation() {
+//        if let currentLocation = currentLocation {
+//
+//        }
 //    }
     
 
@@ -73,4 +107,12 @@ class MapViewController: UIViewController {
     }
     */
 
+    
+    func focusOn(annotation: MKAnnotation) {
+        mapView.selectAnnotation(annotation, animated:true)
+        
+        let zoomRegion = MKCoordinateRegion(center: annotation.coordinate, latitudinalMeters: 1000, longitudinalMeters: 1000)
+        
+        mapView.setRegion(zoomRegion, animated: true)
+    }
 }
