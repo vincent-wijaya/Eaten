@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import Firebase
 
 enum DatabaseChange {
     case add
@@ -26,6 +27,8 @@ protocol DatabaseListener: AnyObject {
 }
 
 protocol DatabaseProtocol: AnyObject {
+    var currentUser: Firebase.User? {get set}
+    
     func cleanUp()
     
     func addListener(listener: DatabaseListener)

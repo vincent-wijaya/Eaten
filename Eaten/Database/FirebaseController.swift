@@ -155,6 +155,7 @@ class FirebaseController: NSObject, DatabaseProtocol {
             if let user = authResult?.user, let usersRef = strongSelf.usersRef {
                 strongSelf.currentUser = user
                 
+                print(usersRef)
                 usersRef.document(user.uid).setData(
                     [
                         "givenName" : givenName,

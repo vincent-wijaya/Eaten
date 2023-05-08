@@ -9,6 +9,10 @@ import UIKit
 
 class SettingsTableViewController: UITableViewController {
     
+    let FIRST_CELL = "firstCell"
+    
+    let LOGIN_SECTION = 0
+    
     struct Setting {
         let title: String?
         let handler: (() -> Void)
@@ -32,16 +36,26 @@ class SettingsTableViewController: UITableViewController {
 
     override func numberOfSections(in tableView: UITableView) -> Int {
         // #warning Incomplete implementation, return the number of sections
-        return 0
+        return 1
     }
 
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         // #warning Incomplete implementation, return the number of rows
-        return 0
+        return 1
     }
 
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let cell = tableView.dequeueReusableCell(withIdentifier: "reuseIdentifier", for: indexPath)
+        let cell = tableView.dequeueReusableCell(withIdentifier: FIRST_CELL, for: indexPath)
+        var content = cell.defaultContentConfiguration()
+        if databaseController?.currentUser == nil {
+            content.text = "Login or Signup"
+        }
+        else {
+//            content.text = databaseController?.currentUser?.displayName
+            content.text = "Vincent Wijaya"
+        }
+            
+        cell.contentConfiguration = content
 
         // Configure the cell...
 
@@ -67,6 +81,17 @@ class SettingsTableViewController: UITableViewController {
         }    
     }
     */
+    
+    override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        if indexPath.section == LOGIN_SECTION {
+            if databaseController?.currentUser == nil {
+                performSegue(withIdentifier: "loginSegue", sender: self)
+            }
+            else {
+                // Display user information
+            }
+        }
+    }
 
     /*
     // Override to support rearranging the table view.

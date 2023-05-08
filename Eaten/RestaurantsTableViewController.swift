@@ -22,7 +22,24 @@ class RestaurantsTableViewController: UITableViewController, CLLocationManagerDe
     
     let CELL_RESTAURANT = "restaurantCell"
     
+    var currentLocation: CLLocationCoordinate2D?
+    
     let PLACES_API_KEY = "AIzaSyCq_WMJfKUFjDOO13OhDQJwX2KLXc38FxQ"
+    
+    var restaurantList = [Restaurant]()
+    
+    
+    @IBAction func reloadRestaurants(_ sender: Any) {
+        Task {
+            guard let currentLocation = currentLocation else {
+                // Display alert which says "Location cannot be determined"
+                
+                return
+            }
+            await fetchRestaurants(coordinate: currentLocation)
+            
+        }
+    }
     
     class Restaurant {
         var id: String?
@@ -30,6 +47,20 @@ class RestaurantsTableViewController: UITableViewController, CLLocationManagerDe
         var cuisine: String?
         var description: String?
         var address: String?
+        var types: [String]?
+        var openingHours: GMSOpeningHours?
+        var phoneNumber: String?
+        
+        init(_ place: GMSPlace) {
+            id = place.placeID
+            name = place.name
+//            cuisine = place.
+            description = place.description
+            address = place.formattedAddress
+            types = place.types
+            openingHours = place.openingHours
+            phoneNumber = place.phoneNumber
+        }
         
 //        var coordinate: CLLocationCoordinate2D
 //
@@ -55,6 +86,39 @@ class RestaurantsTableViewController: UITableViewController, CLLocationManagerDe
     
     func fetchRestaurants(coordinate: CLLocationCoordinate2D) async {
         
+        let location = "\(coordinate.latitude),\(coordinate.longitude)"
+        
+////        var params = {
+//            'locationbias': f'circle:500@{current_location}',
+//            'input': 'restaurant',
+//            'inputtype': 'textquery',
+//            'key': API_KEY
+        
+        placesClient.currentPlace(callback: { (placeLikelihoodList, error ) in
+            if let error = error {
+                print("Error fetching: \(error)")
+                return
+            }
+            
+            if let placeLikelihoodList = placeLikelihoodList {
+                for likelihood in placeLikelihoodList.likelihoods {
+                    let place = likelihood.place
+                
+                    if place.types!.contains("restaurant") {
+                        // Found a nearby restaurant
+                        self.createMapAnnotation(title: place.name!, subtitle: place.formattedAddress!, coordinate: place.coordinate)
+                        let restaurant = Restaurant(place)
+                        self.restaurantList.append(restaurant)
+                    }
+                }
+                
+                DispatchQueue.main.async {
+                    self.tableView.reloadData()
+                }
+            }
+            })
+        
+//        placesClient.findPlaceLikelihoodsFromCurrentLocation(withPlaceFields: <#T##GMSPlaceField#>, callback: <#T##GMSPlaceLikelihoodsCallback##GMSPlaceLikelihoodsCallback##([GMSPlaceLikelihood]?, Error?) -> Void#>)
         
 //        let locationManager = CLLocationManager()
 //        locationManager.requestWhenInUseAuthorization()
@@ -69,10 +133,9 @@ class RestaurantsTableViewController: UITableViewController, CLLocationManagerDe
         requestURLComponents.host = "www.maps.googleapis.com"
         requestURLComponents.path = "/maps/api/place/nearbysearch/json"
         requestURLComponents.queryItems = [
-            URLQueryItem(name: "location", value: "\(coordinate.latitude)%2C\(coordinate.longitude)"),
+            URLQueryItem(name: "location", value: "\(coordinate.latitude),\(coordinate.longitude)"),
             URLQueryItem(name: "radius", value: "500"),
-            URLQueryItem(name: "input", value: "restaurant"),
-            URLQueryItem(name: "inputtype", value: "textquery"),
+            URLQueryItem(name: "type", value: "restaurant"),
             URLQueryItem(name: "key", value: PLACES_API_KEY)
         ]
 //    https://maps.googleapis.com/maps/api/place/findplacefromtext/json
@@ -81,27 +144,27 @@ class RestaurantsTableViewController: UITableViewController, CLLocationManagerDe
 //      &inputtype=textquery
 //      &key=YOUR_API_KE
         
-        guard let requestURL = requestURLComponents.url else {
-            print("Invalid URL.")
-            return
-        }
-
-        print(requestURL)
-        
-        let urlRequest = URLRequest(url: requestURL)
-        
-        do {
-            let (data, response) = try await URLSession.shared.data(for: urlRequest)
-            
-            guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
-                return
-            }
-            
-            print(data)
-        }
-        catch let error {
-            print(error)
-        }
+//        guard let requestURL = requestURLComponents.url else {
+//            print("Invalid URL.")
+//            return
+//        }
+//
+//        print(requestURL)
+//
+//        let urlRequest = URLRequest(url: requestURL)
+//
+//        do {
+//            let (data, response) = try await URLSession.shared.data(for: urlRequest)
+//
+//            guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
+//                return
+//            }
+//
+//            print(data)
+//        }
+//        catch let error {
+//            print(error)
+//        }
     }
     
     func didAutocomplete(with predictions: [GMSAutocompletePrediction]) {
@@ -134,10 +197,21 @@ class RestaurantsTableViewController: UITableViewController, CLLocationManagerDe
         }
     }
     
-    func locationManager(_ manager: CLLocationManager, didChangeAuthorization status: CLAuthorizationStatus) {
-        print("1")
-        if status == .authorizedWhenInUse || status == .authorizedAlways {
-            locationManager.startUpdatingLocation()
+    
+    
+    func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
+        let authorizationStatus = manager.authorizationStatus
+        
+        switch authorizationStatus {
+        case .authorizedWhenInUse:
+            // Start updating location when authorized
+            manager.startUpdatingLocation()
+        case .denied, .restricted:
+            // Handle denied or restricted authorization status
+            // Display an alert to inform the user or take appropriate action
+            break
+        default:
+            break
         }
     }
     
@@ -150,12 +224,8 @@ class RestaurantsTableViewController: UITableViewController, CLLocationManagerDe
             
             let coordinate = CLLocationCoordinate2D(latitude: location.coordinate.latitude, longitude: location.coordinate.longitude)
             
-//            await fetchRestaurants(coordinate: coordinate)
+            currentLocation = coordinate
             moveFocus(coordinate: coordinate)
-            print(coordinate)
-            
-            
-            
         }
     }
 //
@@ -186,7 +256,7 @@ class RestaurantsTableViewController: UITableViewController, CLLocationManagerDe
 //            }
 //
 //            let decoder = JSONDecoder()
-////            let volmeData = try decoder.decode(VolumeData.self, from: data)
+//            let volmeData = try decoder.decode(VolumeData.self, from: data)
 //
 //
 //        }
@@ -211,11 +281,15 @@ class RestaurantsTableViewController: UITableViewController, CLLocationManagerDe
         locationManager.delegate = self
         
         let authorisationStatus = locationManager.authorizationStatus
-        if authorisationStatus != .authorizedWhenInUse {
-            if authorisationStatus == .notDetermined {
-                locationManager.requestWhenInUseAuthorization()
+            if authorisationStatus != .authorizedWhenInUse {
+                if authorisationStatus == .notDetermined {
+                    // Request location authorization
+                    locationManager.requestWhenInUseAuthorization()
+                }
+            } else {
+                // Start updating location if already authorized
+                locationManager.startUpdatingLocation()
             }
-        }
     }
     
     override func viewWillAppear(_ animated: Bool) {
@@ -238,18 +312,18 @@ class RestaurantsTableViewController: UITableViewController, CLLocationManagerDe
 
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         // #warning Incomplete implementation, return the number of rows
-        return searchPredictions.count
+        return restaurantList.count
     }
 
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: CELL_RESTAURANT, for: indexPath)
         
-        let restaurant = searchPredictions[indexPath.row]
+        let restaurant = restaurantList[indexPath.row]
         
         var content = cell.defaultContentConfiguration()
     
-        content.text = restaurant.attributedPrimaryText.string
-        content.secondaryText = restaurant.description
+        content.text = restaurant.name
+        content.secondaryText = restaurant.address
         cell.contentConfiguration = content
 
         return cell
