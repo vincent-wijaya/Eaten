@@ -37,6 +37,6 @@ protocol DatabaseProtocol: AnyObject {
 //    func addReview()
     
     func signIn(email: String, password: String) -> Bool
-    func createAccount(givenName: String, familyName: String, username: String, email: String, password: String) -> Bool
+    func createAccount(email: String, password: String) -> Bool
     func signOut()
 }

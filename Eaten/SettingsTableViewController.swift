@@ -41,18 +41,32 @@ class SettingsTableViewController: UITableViewController {
 
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         // #warning Incomplete implementation, return the number of rows
-        return 1
+        if databaseController?.currentUser == nil {
+            return 1
+        }
+        else {
+            return 2
+        }
     }
 
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: FIRST_CELL, for: indexPath)
         var content = cell.defaultContentConfiguration()
-        if databaseController?.currentUser == nil {
-            content.text = "Login or Signup"
+        
+        if indexPath.row == 0 {
+            if databaseController?.currentUser == nil {
+                content.text = "Login or Signup"
+            }
+            else {
+                //            content.text = databaseController?.currentUser?.displayName
+                content.text = "Vincent Wijaya"
+            }
         }
-        else {
-//            content.text = databaseController?.currentUser?.displayName
-            content.text = "Vincent Wijaya"
+        else if indexPath.row == 1 {
+            if databaseController?.currentUser != nil {
+                content.text = "Log out"
+                content.textProperties.color = .systemRed
+            }
         }
             
         cell.contentConfiguration = content
@@ -84,11 +98,19 @@ class SettingsTableViewController: UITableViewController {
     
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         if indexPath.section == LOGIN_SECTION {
-            if databaseController?.currentUser == nil {
-                performSegue(withIdentifier: "loginSegue", sender: self)
+            if indexPath.row == 0 {
+                if databaseController?.currentUser == nil {
+                    performSegue(withIdentifier: "loginSegue", sender: self)
+                }
+                else {
+                    // Display user information
+                }
             }
-            else {
-                // Display user information
+            else if indexPath.row == 1 {
+                if databaseController?.currentUser != nil {
+                    databaseController?.signOut()
+                    tableView.reloadData()
+                }
             }
         }
     }

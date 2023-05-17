@@ -141,7 +141,7 @@ class FirebaseController: NSObject, DatabaseProtocol {
         listeners.removeDelegate(listener)
     }
     
-    func createAccount(givenName: String, familyName: String, username: String, email: String, password: String) -> Bool {
+    func createAccount(email: String, password: String) -> Bool {
         var result = false
         
         Auth.auth().createUser(withEmail: email, password: password) { authResult, error in
@@ -155,13 +155,12 @@ class FirebaseController: NSObject, DatabaseProtocol {
             if let user = authResult?.user, let usersRef = strongSelf.usersRef {
                 strongSelf.currentUser = user
                 
-                print(usersRef)
+                let emailArr = email.components(separatedBy: "@")
+                let username = emailArr[0]
+                
                 usersRef.document(user.uid).setData(
                     [
-                        "givenName" : givenName,
-                        "familyName" : familyName,
                         "username" : username,
-                        "email" : email,
                         "reviews" : []
                     ])
                 
@@ -169,6 +168,7 @@ class FirebaseController: NSObject, DatabaseProtocol {
             }
         }
         
+        print("returning \(result)")
         return result
     }
     
