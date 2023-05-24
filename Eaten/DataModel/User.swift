@@ -13,6 +13,7 @@ class User: NSObject, Codable {
     @DocumentID var id: String?
     var givenName: String?
     var familyName: String?
+    var fullName: String?
     var username: String?
     var email: String?
     var reviewList: [Review]?
@@ -21,6 +22,7 @@ class User: NSObject, Codable {
         case id
         case givenName
         case familyName
+        case fullName
         case username
         case email
         case reviewList

@@ -6,6 +6,7 @@
 //
 
 import UIKit
+import Firebase
 
 class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 
@@ -17,22 +18,38 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         // If using a storyboard, the `window` property will automatically be initialized and attached to the scene.
         // This delegate does not imply the connecting scene or session are new (see `application:configurationForConnectingSceneSession` instead).
         guard let _ = (scene as? UIWindowScene) else { return }
+
+        let appDelegate = UIApplication.shared.delegate as? AppDelegate
+        let databaseController = appDelegate?.databaseController
+
+        let storyboard = UIStoryboard(name: "Main", bundle: nil)
+        
+        print("got here")
+//        if let loggedUsername = UserDefaults.standard.string(forKey: "username") {
+        Auth.auth().addStateDidChangeListener { auth, user in
             
-//        let tabBarController = window?.rootViewController as! UITabBarController
-//
-//
-//
-//        let splitViewController = ta as! UISplitViewController
-//        splitViewController.preferredDisplayMode = .oneBesideSecondary
-//
-//        let masterNavigationController = splitViewController.viewControllers.first as! UINavigationController
-//        let detailNavigationController = splitViewController.viewControllers.last as! UINavigationController
-//
-//        let restaurantsTableViewController = masterNavigationController.viewControllers.first as! RestaurantsTableViewController
-//        let mapViewController = detailNavigationController.viewControllers.first as! MapViewController
-//
-//        restaurantsTableViewController.mapViewController = mapViewController
+            if user != nil {
+                databaseController?.currentUser.id = user?.uid
+                
+                let mainTabBarController = storyboard.instantiateViewController(identifier: "MainTabBarController")
+                self.window?.rootViewController = mainTabBarController
+            }
+            else {
+                let loginNavigationController = storyboard.instantiateViewController(identifier: "LoginNavigationController")
+                self.window?.rootViewController = loginNavigationController
+            }
+        }
+
+        
     }
+    
+//    func changeRootViewController(_ viewController: UIViewController, animated: Bool = true) {
+//        guard let window = self.window else {
+//            return
+//        }
+//        
+//        window.rootViewController = viewController
+//    }
 
     func sceneDidDisconnect(_ scene: UIScene) {
         // Called as the scene is being released by the system.

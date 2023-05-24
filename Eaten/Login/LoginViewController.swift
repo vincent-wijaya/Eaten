@@ -29,45 +29,35 @@ class LoginViewController: UIViewController {
     
     override func viewWillAppear(_ animated: Bool) {
         handle = Auth.auth().addStateDidChangeListener { auth, user in
-            
-            (self.databaseController as! FirebaseController).currentUser = user
-            
             if user != nil {
-                self.performSegue(withIdentifier: "loggedInSegue", sender: self)
+                print("Logged in")
+                
+                self.databaseController?.currentUser.id = user?.uid
+                
+                (self.databaseController as! FirebaseController).setupUserListener()
+                
+                let tabBarController = self.storyboard?.instantiateViewController(identifier: "MainTabBarController")
+                self.navigationController?.pushViewController(tabBarController!, animated: false)
             }
-            
+
         }
     }
-    
+
     override func viewWillDisappear(_ animated: Bool) {
         Auth.auth().removeStateDidChangeListener(handle!)
     }
+    
     
     @IBAction func loginAccount(_ sender: Any) {
         guard let email = emailField.text, isValidEmail(email) else {
             return
         }
         
-        guard let _ = passwordField.text else {
-            return
-        }
-    }
-    
-    
-    @IBAction func createAccount(_ sender: Any) {
-        guard let email = emailField.text, isValidEmail(email) else {
+        guard let password = passwordField.text else {
             return
         }
         
-        guard let password = passwordField.text, isValidPassword(password) else {
-            return
-        }
-        
-        let result = databaseController!.createAccount(email: email, password: password)
-        
-//        if result {
-//            performSegue(withIdentifier: "loggedInSegue", sender: self)
-//        }
+        let _ = databaseController?.signIn(email: email, password: password)
     }
     
     /**

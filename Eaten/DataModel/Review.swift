@@ -12,10 +12,12 @@ class Review: NSObject, Codable {
 
     @DocumentID var id: String?
     var author: User?
-    var reviewText: String?
-    var notes: String?
-    var rating: Int?
-    var date: Date?
     var restaurantId: String?
-    var dishName: String?
+    var restaurantName: String?
+    var rating: Int?
+    var foodName: String?
+    var dateOrdered: Date?
+    var notes: String?
+    var dateCreated: Date?
+    var lastUpdated: Date?
 }

@@ -13,7 +13,6 @@ import FirebaseAuth
 class FirebaseController: NSObject, DatabaseProtocol {
     
     var listeners = MulticastDelegate<DatabaseListener>()
-    var user: User?
     var reviewList: [Review]
     
     var authController: Auth
@@ -21,7 +20,7 @@ class FirebaseController: NSObject, DatabaseProtocol {
     var usersRef: CollectionReference?
     var reviewsRef: CollectionReference?
     
-    var currentUser: Firebase.User?
+    var currentUser: User = User()
     
     override init() {
         FirebaseApp.configure()
@@ -47,9 +46,88 @@ class FirebaseController: NSObject, DatabaseProtocol {
             listener.onReviewChange(change: .update, reviewList: reviewList)
         }
     }
+    func removeListener(listener: DatabaseListener) {
+        listeners.removeDelegate(listener)
+    }
+    
+    // MARK: Authentication
+    
+    func createAccount(givenName: String, familyName: String, username: String, email: String, password: String) {
+        var result = false
+        
+        print("Creating user")
+        Auth.auth().createUser(withEmail: email, password: password) { authResult, error in
+            let strongSelf = self
+            
+            if error != nil {
+                print(error!)
+                return
+            }
+            
+            if let id = authResult?.user.uid {
+                guard let _ = strongSelf.insertUser(id: id, givenName: givenName, familyName: familyName, username: username, email: email) else {
+                    
+                    return
+                }
+                
+//                strongSelf.setupUserListener()
+            }
+        }
+    }
+    
+    
+    func signIn(email: String, password: String) -> Bool {
+        var result = false
+        Auth.auth().signIn(withEmail: email, password: password) { [weak self] authResult, error in
+            guard let strongSelf = self else { return }
+            
+            if error != nil {
+                print(error!)
+                return
+            }
+            
+//            strongSelf.setupUserListener()
+        }
+        
+        return result
+    }
+    
+    func signOut() {
+        do {
+            try Auth.auth().signOut()
+        }
+        catch {
+            print(error.localizedDescription)
+        }
+    }
+    
+    // MARK: Users
+    
+    func insertUser(id: String, givenName: String, familyName: String, username: String, email: String) -> User? {
+        
+        let user = User()
+        user.givenName = givenName
+        user.familyName = familyName
+        user.fullName = "\(givenName) \(familyName)"
+        user.username = username
+        user.email = email
+        
+        guard let usersRef = usersRef else {
+            return nil
+        }
+        
+        do {
+            try usersRef.document(id).setData(from: user)
+        }
+        catch {
+            print("Failed to serialise user")
+        }
+        
+        return user
+    }
     
     func setupUserListener() {
-        guard let userId = currentUser?.uid else {
+        guard let userId = currentUser.id else {
             return
         }
         
@@ -65,13 +143,13 @@ class FirebaseController: NSObject, DatabaseProtocol {
                 return
             }
             
-            self.parseUserSnapshot(snapshot: userSnapshot)
+            self.parseLoggedInUserSnapshot(snapshot: userSnapshot)
             
         }
     }
     
-    func parseUserSnapshot(snapshot: DocumentSnapshot) {
-        var parsedUser = User()
+    func parseLoggedInUserSnapshot(snapshot: DocumentSnapshot) {
+        let parsedUser = User()
 //        user = User()
         
         guard let data = snapshot.data(),
@@ -87,11 +165,38 @@ class FirebaseController: NSObject, DatabaseProtocol {
         parsedUser.username = username
         parsedUser.email = email
         
-        user = parsedUser
+        currentUser = parsedUser
     }
     
-    func setupReviewListener() {
-        guard let authorId = currentUser?.uid else {
+    // MARK: Reviews
+    
+    func insertReview(restaurantId: String, restaurantName: String, foodName: String, rating: Int, dateOrdered: Date, notes: String) -> Bool {
+        let review = Review()
+        review.restaurantId = restaurantId
+        review.restaurantName = restaurantName
+        review.foodName = foodName
+        review.rating = rating
+        review.dateOrdered = dateOrdered
+        review.notes = notes
+        review.dateCreated = Date()
+        review.lastUpdated = nil
+        
+        do {
+            if let reviewRef = try reviewsRef?.addDocument(from: review) {
+                review.id = reviewRef.documentID
+                return true
+            }
+        }
+        catch {
+            print("Failed to serialise review")
+            return false
+        }
+        
+        return false
+    }
+    
+    func setupUserReviewListener() {
+        guard let authorId = currentUser.id else {
             print("uid doesn't exist for some reason")
             return
         }
@@ -112,23 +217,28 @@ class FirebaseController: NSObject, DatabaseProtocol {
         }
     }
     
+    
+    func fetchUserReviews() {
+        
+    }
+    
     func parseReviewsSnapshot(snapshot: [QueryDocumentSnapshot]) {
         
 //        snapshot.forEach( (change) in
 //                          var parsedReview: Review?
-//                          
+//
 //                          do {
 //            parsedReview = try change.
 //        }
-//                          
+//
 //        if let reviewsRef = snapshot.data()["reviews"] as? [DocumentReference] {
 //            for reference in reviewsRef {
-//                
+//
 //                reviewList.append(review)
-//                
-//                
+//
+//
 //            }
-//            
+//
 ////            listeners.invoke { (listener) in
 ////                if listener.listenerType == ListenerType.reviews || listener.listenerType == ListenerType.all {
 ////                    listener.onTeamChange(change: .update, teamHeroes: .heroes)
@@ -137,67 +247,5 @@ class FirebaseController: NSObject, DatabaseProtocol {
 //        }
     }
     
-    func removeListener(listener: DatabaseListener) {
-        listeners.removeDelegate(listener)
-    }
     
-    func createAccount(email: String, password: String) -> Bool {
-        var result = false
-        
-        Auth.auth().createUser(withEmail: email, password: password) { authResult, error in
-            let strongSelf = self
-            
-            if error != nil {
-                print(error!)
-                return
-            }
-            
-            if let user = authResult?.user, let usersRef = strongSelf.usersRef {
-                strongSelf.currentUser = user
-                
-                let emailArr = email.components(separatedBy: "@")
-                let username = emailArr[0]
-                
-                usersRef.document(user.uid).setData(
-                    [
-                        "username" : username,
-                        "reviews" : []
-                    ])
-                
-                result = true
-            }
-        }
-        
-        print("returning \(result)")
-        return result
-    }
-    
-    
-    func signIn(email: String, password: String) -> Bool {
-        var result = false
-        Auth.auth().signIn(withEmail: email, password: password) { [weak self] authResult, error in
-            guard let strongSelf = self else { return }
-            
-            if error != nil {
-                print(error!)
-            }
-        
-            if let user = authResult?.user {
-                strongSelf.currentUser = user
-                result = true
-            }
-            
-        }
-        
-        return result
-    }
-    
-    func signOut() {
-        do {
-            try Auth.auth().signOut()
-        }
-        catch {
-            print(error.localizedDescription)
-        }
-    }
 }

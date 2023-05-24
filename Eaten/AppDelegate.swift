@@ -18,6 +18,8 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         // Override point for customization after application launch.
         
         databaseController = FirebaseController()
+        
+        
         GMSPlacesClient.provideAPIKey("AIzaSyCq_WMJfKUFjDOO13OhDQJwX2KLXc38FxQ")
         return true
     }

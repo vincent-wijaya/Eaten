@@ -58,8 +58,7 @@ class SettingsTableViewController: UITableViewController {
                 content.text = "Login or Signup"
             }
             else {
-                //            content.text = databaseController?.currentUser?.displayName
-                content.text = "Vincent Wijaya"
+                content.text = databaseController?.currentUser.username
             }
         }
         else if indexPath.row == 1 {
@@ -109,7 +108,8 @@ class SettingsTableViewController: UITableViewController {
             else if indexPath.row == 1 {
                 if databaseController?.currentUser != nil {
                     databaseController?.signOut()
-                    tableView.reloadData()
+                    
+                    navigationController?.popViewController(animated: true)
                 }
             }
         }

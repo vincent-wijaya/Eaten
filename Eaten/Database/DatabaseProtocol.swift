@@ -27,16 +27,16 @@ protocol DatabaseListener: AnyObject {
 }
 
 protocol DatabaseProtocol: AnyObject {
-    var currentUser: Firebase.User? {get set}
+    var currentUser: User {get set}
     
     func cleanUp()
     
     func addListener(listener: DatabaseListener)
     func removeListener(listener: DatabaseListener)
     
-//    func addReview()
+    func insertReview(restaurantId: String, restaurantName: String, foodName: String, rating: Int, dateOrdered: Date, notes: String) -> Bool
     
     func signIn(email: String, password: String) -> Bool
-    func createAccount(email: String, password: String) -> Bool
+    func createAccount(givenName: String, familyName: String, username: String, email: String, password: String)
     func signOut()
 }

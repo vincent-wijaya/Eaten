@@ -25,8 +25,11 @@ class HomeViewController: UIViewController {
     
     override func viewDidAppear(_ animated: Bool) {
         handle = Auth.auth().addStateDidChangeListener { [self] auth, user in
+            let strongSelf = self
             
-            (self.databaseController as! FirebaseController).currentUser = user
+            if user != nil {
+                strongSelf.databaseController?.currentUser.id = user?.uid
+            }
         }
     }
     
