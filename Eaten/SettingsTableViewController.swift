@@ -54,18 +54,15 @@ class SettingsTableViewController: UITableViewController {
         var content = cell.defaultContentConfiguration()
         
         if indexPath.row == 0 {
-            if databaseController?.currentUser == nil {
-                content.text = "Login or Signup"
-            }
-            else {
-                content.text = databaseController?.currentUser.username
+            if let currentUser = databaseController?.currentUser {
+                content.text = currentUser.username
             }
         }
         else if indexPath.row == 1 {
-            if databaseController?.currentUser != nil {
+//            if databaseController?.currentUser != nil {
                 content.text = "Log out"
                 content.textProperties.color = .systemRed
-            }
+//            }
         }
             
         cell.contentConfiguration = content

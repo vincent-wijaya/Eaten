@@ -22,20 +22,22 @@ class HomeViewController: UIViewController {
         databaseController = appDelegate?.databaseController
     }
     
-    
-    override func viewDidAppear(_ animated: Bool) {
-        handle = Auth.auth().addStateDidChangeListener { [self] auth, user in
-            let strongSelf = self
-            
-            if user != nil {
-                strongSelf.databaseController?.currentUser.id = user?.uid
-            }
-        }
-    }
-    
-    override func viewDidDisappear(_ animated: Bool) {
-        Auth.auth().removeStateDidChangeListener(handle!)
-    }
+//    
+//    override func viewDidAppear(_ animated: Bool) {
+//        handle = Auth.auth().addStateDidChangeListener { [self] auth, user in
+//            let strongSelf = self
+//            
+//            if let user = auth.currentUser {
+//                let currentUser = User()
+//                currentUser.id = user.uid
+//                strongSelf.databaseController?.currentUser = currentUser
+//            }
+//        }
+//    }
+//    
+//    override func viewDidDisappear(_ animated: Bool) {
+//        Auth.auth().removeStateDidChangeListener(handle!)
+//    }
     
 
     /*

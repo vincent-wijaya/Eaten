@@ -22,23 +22,23 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         let appDelegate = UIApplication.shared.delegate as? AppDelegate
         let databaseController = appDelegate?.databaseController
 
-        let storyboard = UIStoryboard(name: "Main", bundle: nil)
-        
-        print("got here")
-//        if let loggedUsername = UserDefaults.standard.string(forKey: "username") {
-        Auth.auth().addStateDidChangeListener { auth, user in
-            
-            if user != nil {
-                databaseController?.currentUser.id = user?.uid
-                
-                let mainTabBarController = storyboard.instantiateViewController(identifier: "MainTabBarController")
-                self.window?.rootViewController = mainTabBarController
-            }
-            else {
-                let loginNavigationController = storyboard.instantiateViewController(identifier: "LoginNavigationController")
-                self.window?.rootViewController = loginNavigationController
-            }
-        }
+//        let storyboard = UIStoryboard(name: "Main", bundle: nil)
+////        if let loggedUsername = UserDefaults.standard.string(forKey: "username") {
+//        Auth.auth().addStateDidChangeListener { auth, user in
+//            
+//            if let user = auth.currentUser {
+//                let currentUser = User()
+//                currentUser.id = user.uid
+//                databaseController?.currentUser = currentUser
+//                
+//                let mainTabBarController = storyboard.instantiateViewController(identifier: "MainTabBarController")
+//                self.window?.rootViewController = mainTabBarController
+//            }
+//            else {
+//                let loginNavigationController = storyboard.instantiateViewController(identifier: "LoginNavigationController")
+//                self.window?.rootViewController = loginNavigationController
+//            }
+//        }
 
         
     }

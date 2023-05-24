@@ -107,7 +107,7 @@ class UserReviewsTableViewController: UITableViewController, UISearchResultsUpda
             // Configure and return a hero cell
             let reviewCell = tableView.dequeueReusableCell(withIdentifier: CELL_REVIEW, for: indexPath)
             
-            var content = reviewCell.defaultContentConfiguration()
+//            var content = reviewCell.defaultContentConfiguration()
 //            let review = filteredReviews[indexPath.row]
 //            content.text = review.author!.name
 //            content.secondaryText = review.description

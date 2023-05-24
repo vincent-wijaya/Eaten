@@ -11,7 +11,6 @@ import FirebaseFirestoreSwift
 class Review: NSObject, Codable {
 
     @DocumentID var id: String?
-    var author: User?
     var restaurantId: String?
     var restaurantName: String?
     var rating: Int?

@@ -20,12 +20,13 @@ class FirebaseController: NSObject, DatabaseProtocol {
     var usersRef: CollectionReference?
     var reviewsRef: CollectionReference?
     
-    var currentUser: User = User()
+    var currentUser: User?
     
     override init() {
         FirebaseApp.configure()
         authController = Auth.auth()
         database = Firestore.firestore()
+        currentUser = User()
         reviewList = [Review]()
         
         usersRef = database.collection("users")
@@ -95,6 +96,7 @@ class FirebaseController: NSObject, DatabaseProtocol {
     func signOut() {
         do {
             try Auth.auth().signOut()
+            currentUser = nil
         }
         catch {
             print(error.localizedDescription)
@@ -127,7 +129,7 @@ class FirebaseController: NSObject, DatabaseProtocol {
     }
     
     func setupUserListener() {
-        guard let userId = currentUser.id else {
+        guard let currentUser = currentUser, let userId = currentUser.id else {
             return
         }
         
@@ -149,7 +151,6 @@ class FirebaseController: NSObject, DatabaseProtocol {
     }
     
     func parseLoggedInUserSnapshot(snapshot: DocumentSnapshot) {
-        let parsedUser = User()
 //        user = User()
         
         guard let data = snapshot.data(),
@@ -160,12 +161,15 @@ class FirebaseController: NSObject, DatabaseProtocol {
             return
         }
         
-        parsedUser.givenName = givenName
-        parsedUser.familyName = familyName
-        parsedUser.username = username
-        parsedUser.email = email
+        guard let currentUser = currentUser else {
+            print("currentUser doesn't exist")
+            return
+        }
         
-        currentUser = parsedUser
+        currentUser.givenName = givenName
+        currentUser.familyName = familyName
+        currentUser.username = username
+        currentUser.email = email
     }
     
     // MARK: Reviews
@@ -182,8 +186,11 @@ class FirebaseController: NSObject, DatabaseProtocol {
         review.lastUpdated = nil
         
         do {
-            if let reviewRef = try reviewsRef?.addDocument(from: review) {
+            if let reviewRef = try reviewsRef?.addDocument(from: review), let currentUser = currentUser {
                 review.id = reviewRef.documentID
+                
+                addReviewToUser(newReviewRef: reviewRef, authorId: currentUser.id!)
+                
                 return true
             }
         }
@@ -195,8 +202,16 @@ class FirebaseController: NSObject, DatabaseProtocol {
         return false
     }
     
+    func addReviewToUser(newReviewRef: DocumentReference, authorId: String) {
+        
+        usersRef?.document(authorId).updateData(
+                        ["reviews" : FieldValue.arrayUnion([newReviewRef])]
+                    )
+
+    }
+    
     func setupUserReviewListener() {
-        guard let authorId = currentUser.id else {
+        guard let currentUser = currentUser, let authorId = currentUser.id else {
             print("uid doesn't exist for some reason")
             return
         }
@@ -210,7 +225,7 @@ class FirebaseController: NSObject, DatabaseProtocol {
             }
             
             let reviewsSnapshot = querySnapshot.documents
-            self.parseReviewsSnapshot(snapshot: reviewsSnapshot)
+//            self.parseReviewsSnapshot(snapshot: reviewsSnapshot)
             
 //            self.setupUserListener()
             

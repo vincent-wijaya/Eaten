@@ -29,12 +29,16 @@ class LoginViewController: UIViewController {
     
     override func viewWillAppear(_ animated: Bool) {
         handle = Auth.auth().addStateDidChangeListener { auth, user in
-            if user != nil {
+            
+            if let user = auth.currentUser {
                 print("Logged in")
                 
-                self.databaseController?.currentUser.id = user?.uid
+                let currentUser = User()
+                currentUser.id = user.uid
+                self.databaseController?.currentUser = currentUser
                 
                 (self.databaseController as! FirebaseController).setupUserListener()
+                (self.databaseController as! FirebaseController).setupUserReviewListener()
                 
                 let tabBarController = self.storyboard?.instantiateViewController(identifier: "MainTabBarController")
                 self.navigationController?.pushViewController(tabBarController!, animated: false)

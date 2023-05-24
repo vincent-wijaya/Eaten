@@ -27,7 +27,7 @@ protocol DatabaseListener: AnyObject {
 }
 
 protocol DatabaseProtocol: AnyObject {
-    var currentUser: User {get set}
+    var currentUser: User? {get set}
     
     func cleanUp()
     
