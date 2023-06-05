@@ -7,6 +7,7 @@
 
 import UIKit
 import FirebaseFirestoreSwift
+import Firebase
 
 class User: NSObject, Codable {
 
@@ -17,6 +18,7 @@ class User: NSObject, Codable {
     var username: String?
     var email: String?
     var reviewList: [Review]?
+    var friends: DocumentReference?
     
     enum CodingKeys: String, CodingKey {
         case id
@@ -26,5 +28,6 @@ class User: NSObject, Codable {
         case username
         case email
         case reviewList
+        case friends
     }
 }

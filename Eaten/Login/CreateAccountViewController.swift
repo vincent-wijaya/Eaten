@@ -32,47 +32,92 @@ class CreateAccountViewController: UIViewController {
         
         let appDelegate = UIApplication.shared.delegate as? AppDelegate
         databaseController = appDelegate?.databaseController
-
-        // Do any additional setup after loading the view.
     }
     
     @IBAction func createAccount(_ sender: Any) {
-        print("Tapped Create Account")
+        let USERNAME_CHARACTER_LIMIT = 15
         
+        // Given name is optional
         guard let givenName = givenNameField.text else {
             return
         }
         
-        guard let familyName = familyNameField.text else {
-            
+        // Validate family name input
+        guard let familyName = familyNameField.text, familyName.count > 0 else {
+            displayMessageWithDismiss(title: "Missing family name", message: "Please enter your family name", viewController: self)
             return
         }
         
-        guard let username = usernameField.text else {
+        // Validate username input
+        guard let username = usernameField.text, username.count > 0 else {
+            displayMessageWithDismiss(title: "Missing username", message: "Please enter a username", viewController: self)
             return
         }
         
-        guard let email = emailField.text else {
+        guard username.count <= USERNAME_CHARACTER_LIMIT else {
+            displayMessageWithDismiss(title: "Username too long", message: "Please enter a username with \(USERNAME_CHARACTER_LIMIT) characters or less", viewController: self)
             return
         }
         
-        guard let password = passwordField.text, password == confirmPasswordField.text else {
+        Task {
+            if let _ = await databaseController?.checkUsernameExists(username: username) {
+                displayMessageWithDismiss(title: "Username taken", message: "Please enter a different username", viewController: self)
+            }
+        }
+        
+        // Validate email input
+        guard let email = emailField.text?.lowercased(), email.count > 0, isValidEmail(email) else {
+            displayMessageWithDismiss(title: "Missing email", message: "Please enter your email address", viewController: self)
             return
         }
         
-        let result = databaseController!.createAccount(givenName: givenName, familyName: familyName, username: username, email: email, password: password)
+        // Check if email is associated to an account
+        Task {
+            if let _ = await databaseController?.checkEmailExists(email: email) {
+                displayMessageWithDismiss(title: "Account with the email exists", message: "Account with the email already exists.", viewController: self)
+                return
+            }
+        }
+        
+        // Validate password
+        guard let password = passwordField.text else {
+            displayMessageWithDismiss(title: "Empty Password", message: "Please enter a password", viewController: self)
+            return
+        }
+        
+        guard let confirmPassword = confirmPasswordField.text else {
+            displayMessageWithDismiss(title: "Empty Password Confirmation", message: "Please confirm your password", viewController: self)
+            return
+        }
+        
+        guard password == confirmPassword else {
+            displayMessageWithDismiss(title: "Passwords do not match", message: "Confirmation password does not match your password", viewController: self)
+            return
+        }
+        
+        
+        let success = databaseController!.createAccount(givenName: givenName, familyName: familyName, username: username, email: email, password: password)
     }
-
+    
+    
+    @IBAction func cancelTapped(_ sender: Any) {
+        navigationController?.popViewController(animated: true)
+    }
+    
     override func viewDidAppear(_ animated: Bool) {
         handle = Auth.auth().addStateDidChangeListener { [self] auth, user in
             
-            self.navigationController?.popViewController(animated: true)
+            if user != nil {
+                self.navigationController?.popViewController(animated: true)
+            }
         }
     }
 
     override func viewDidDisappear(_ animated: Bool) {
         Auth.auth().removeStateDidChangeListener(handle!)
     }
+    
+    
 
 
     /*

@@ -11,7 +11,7 @@ class SettingsTableViewController: UITableViewController {
     
     let FIRST_CELL = "firstCell"
     
-    let LOGIN_SECTION = 0
+    let PROFILE_SECTION = 0
     
     struct Setting {
         let title: String?
@@ -53,21 +53,18 @@ class SettingsTableViewController: UITableViewController {
         let cell = tableView.dequeueReusableCell(withIdentifier: FIRST_CELL, for: indexPath)
         var content = cell.defaultContentConfiguration()
         
-        if indexPath.row == 0 {
+          if indexPath.row == 0 {
             if let currentUser = databaseController?.currentUser {
                 content.text = currentUser.username
+                print(content.text)
             }
         }
         else if indexPath.row == 1 {
-//            if databaseController?.currentUser != nil {
                 content.text = "Log out"
                 content.textProperties.color = .systemRed
-//            }
         }
             
         cell.contentConfiguration = content
-
-        // Configure the cell...
 
         return cell
     }
@@ -93,21 +90,12 @@ class SettingsTableViewController: UITableViewController {
     */
     
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        if indexPath.section == LOGIN_SECTION {
-            if indexPath.row == 0 {
-                if databaseController?.currentUser == nil {
-                    performSegue(withIdentifier: "loginSegue", sender: self)
-                }
-                else {
-                    // Display user information
-                }
-            }
-            else if indexPath.row == 1 {
-                if databaseController?.currentUser != nil {
-                    databaseController?.signOut()
-                    
-                    navigationController?.popViewController(animated: true)
-                }
+        if indexPath.row == 1 {
+            databaseController?.signOut()
+            
+            // Return to the previous view controller before the tab bar view controller
+            if let tabBarController = self.tabBarController, let navigationController = tabBarController.navigationController {
+                navigationController.popToRootViewController(animated: true)
             }
         }
     }

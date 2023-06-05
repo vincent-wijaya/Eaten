@@ -6,9 +6,10 @@
 //
 
 import Foundation
+
 import GooglePlaces
 
-class RestaurantSearchController {
+class RestaurantSearchController: SearchRestaurantDelegate {
     
     let PLACES_API_KEY = "AIzaSyCq_WMJfKUFjDOO13OhDQJwX2KLXc38FxQ"
     
@@ -44,6 +45,62 @@ class RestaurantSearchController {
             }
             })
         
+    }
+    
+    func searchNearbyRestaurants(location: CLLocationCoordinate2D) -> [Restaurant] {
+        let placesClient = GMSPlacesClient.shared()
+        var restaurants: [Restaurant] = [Restaurant]()
+        
+        let filter = GMSAutocompleteFilter()
+        filter.type = .establishment
+        
+//        let bounds = GMSCoordinateBounds(coordinate: location, radius: 500)
+        
+        let fields = GMSPlaceField.all
+//        let options = GMSFindPlac
+        
+        placesClient.findPlaceLikelihoodsFromCurrentLocation(withPlaceFields: fields) { (placeLikelihoods, error) in
+            if let error = error {
+                print("Error fetching nearby restaurants: \(error.localizedDescription)")
+                return
+            }
+            
+            if let placeLikelihoods = placeLikelihoods {
+                for likelihood in placeLikelihoods {
+                    let place = likelihood.place
+                    let name = place.name
+                    
+                    print(name)
+                }
+            }
+            
+            
+        }
+        
+        
+
+        
+//        placesClient.currentPlace(callback: { (placeLikelihoodList, error ) in
+//            if let error = error {
+//                print("Error fetching: \(error)")
+//                return
+//            }
+//
+//            if let placeLikelihoodList = placeLikelihoodList {
+//                for likelihood in placeLikelihoodList.likelihoods {
+//                    let place = likelihood.place
+//
+//                    if place.types!.contains("restaurant") {
+//                        let restaurant = Restaurant(place)
+//                        restaurants.append(restaurant)
+//                        // Found a nearby restaurant
+////                        self.createMapAnnotation(title: place.name!, subtitle: place.formattedAddress!, coordinate: place.coordinate)
+//                    }
+//                }
+//            }
+//        })
+        
+        return restaurants
     }
     
     

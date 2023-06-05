@@ -10,7 +10,7 @@ import CoreLocation
 import GooglePlaces
 import MapKit
 
-class RestaurantsTableViewController: UITableViewController, CLLocationManagerDelegate, GMSAutocompleteFetcherDelegate {
+class RestaurantSearchTableViewController: UITableViewController, CLLocationManagerDelegate, GMSAutocompleteFetcherDelegate {
     
     @IBOutlet weak var mapView: MKMapView!
     weak var mapViewController: MapViewController?
@@ -26,7 +26,9 @@ class RestaurantsTableViewController: UITableViewController, CLLocationManagerDe
     
     let PLACES_API_KEY = "AIzaSyCq_WMJfKUFjDOO13OhDQJwX2KLXc38FxQ"
     
-    var restaurantList = [Restaurant]()
+    var restaurants = [Restaurant]()
+    
+    weak var searchRestaurantDelegate: SearchRestaurantDelegate?
     
     
     @IBAction func reloadRestaurants(_ sender: Any) {
@@ -36,44 +38,47 @@ class RestaurantsTableViewController: UITableViewController, CLLocationManagerDe
                 
                 return
             }
-            await fetchRestaurants(coordinate: currentLocation)
+//            await fetchRestaurants(coordinate: currentLocation)
             
+            if let searchRestaurantDelegate = searchRestaurantDelegate {
+                restaurants = searchRestaurantDelegate.searchNearbyRestaurants(location: currentLocation)
+            }
         }
     }
     
-    class Restaurant {
-        var id: String?
-        var name: String?
-        var cuisine: String?
-        var description: String?
-        var address: String?
-        var types: [String]?
-        var openingHours: GMSOpeningHours?
-        var phoneNumber: String?
+    
+    
+    override func viewDidLoad() {
+        super.viewDidLoad()
         
-        init(_ place: GMSPlace) {
-            id = place.placeID
-            name = place.name
-//            cuisine = place.
-            description = place.description
-            address = place.formattedAddress
-            types = place.types
-            openingHours = place.openingHours
-            phoneNumber = place.phoneNumber
+        searchRestaurantDelegate = RestaurantSearchController()
+        
+        locationManager.desiredAccuracy = kCLLocationAccuracyNearestTenMeters
+        locationManager.distanceFilter = 10
+        locationManager.delegate = self
+        
+        let authorisationStatus = locationManager.authorizationStatus
+        if authorisationStatus != .authorizedWhenInUse {
+            if authorisationStatus == .notDetermined {
+                // Request location authorization
+                locationManager.requestWhenInUseAuthorization()
+            }
+        } else {
+            // Start updating location if already authorized
+            locationManager.startUpdatingLocation()
         }
-        
-//        var coordinate: CLLocationCoordinate2D
-//
-//        init(id: String, name: String, cuisine: String, description: String, address: String, lat: Double, long: Double) {
-//            self.id = id
-//            self.name = name
-//            self.cuisine = cuisine
-//            self.description = description
-//            self.address =
-//            coordinate = CLLocationCoordinate2D(latitude: lat, longitude: long)
-//        }
+    }
+    
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        locationManager.startUpdatingLocation()
     }
 
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        locationManager.stopUpdatingLocation()
+    }
+    
 //    func createAutocompleteFetcher() -> GMSAutocompleteFetcher {
 //        let filter = GMSAutocompleteFilter()
 //        filter.type = .establishment
@@ -108,7 +113,7 @@ class RestaurantsTableViewController: UITableViewController, CLLocationManagerDe
                         // Found a nearby restaurant
                         self.createMapAnnotation(title: place.name!, subtitle: place.formattedAddress!, coordinate: place.coordinate)
                         let restaurant = Restaurant(place)
-                        self.restaurantList.append(restaurant)
+                        self.restaurants.append(restaurant)
                     }
                 }
                 
@@ -269,39 +274,6 @@ class RestaurantsTableViewController: UITableViewController, CLLocationManagerDe
         print("error: \(error)")
     }
     
-    override func viewDidLoad() {
-        super.viewDidLoad()
-
-        placesClient = GMSPlacesClient.shared()
-        
-//        fetcher = createAutocompleteFetcher()
-        
-        locationManager.desiredAccuracy = kCLLocationAccuracyNearestTenMeters
-        locationManager.distanceFilter = 10
-        locationManager.delegate = self
-        
-        let authorisationStatus = locationManager.authorizationStatus
-            if authorisationStatus != .authorizedWhenInUse {
-                if authorisationStatus == .notDetermined {
-                    // Request location authorization
-                    locationManager.requestWhenInUseAuthorization()
-                }
-            } else {
-                // Start updating location if already authorized
-                locationManager.startUpdatingLocation()
-            }
-    }
-    
-    override func viewWillAppear(_ animated: Bool) {
-        super.viewWillAppear(animated)
-        locationManager.startUpdatingLocation()
-    }
-
-    override func viewWillDisappear(_ animated: Bool) {
-        super.viewWillDisappear(animated)
-        locationManager.stopUpdatingLocation()
-    }
-    
 
     // MARK: - Table view data source
 
@@ -312,13 +284,13 @@ class RestaurantsTableViewController: UITableViewController, CLLocationManagerDe
 
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         // #warning Incomplete implementation, return the number of rows
-        return restaurantList.count
+        return restaurants.count
     }
 
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: CELL_RESTAURANT, for: indexPath)
         
-        let restaurant = restaurantList[indexPath.row]
+        let restaurant = restaurants[indexPath.row]
         
         var content = cell.defaultContentConfiguration()
     

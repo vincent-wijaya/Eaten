@@ -23,7 +23,7 @@ enum ListenerType {
 protocol DatabaseListener: AnyObject {
     var listenerType: ListenerType {get set}
     func onUserChange(change: DatabaseChange, user: User)
-    func onReviewChange(change: DatabaseChange, reviewList: [Review])
+    func onUserReviewsChange(change: DatabaseChange, reviewList: [Review])
 }
 
 protocol DatabaseProtocol: AnyObject {
@@ -34,9 +34,15 @@ protocol DatabaseProtocol: AnyObject {
     func addListener(listener: DatabaseListener)
     func removeListener(listener: DatabaseListener)
     
+    func checkUsernameExists(username: String) async -> String?
+    func checkEmailExists(email: String) async -> String?
     func insertReview(restaurantId: String, restaurantName: String, foodName: String, rating: Int, dateOrdered: Date, notes: String) -> Bool
     
     func signIn(email: String, password: String) -> Bool
     func createAccount(givenName: String, familyName: String, username: String, email: String, password: String)
     func signOut()
+    
+    func checkSentRequestExists(otherUserId: String, completion: @escaping (Bool?) -> Void)
+    func sendFriendRequest(otherUserId: String)
+
 }

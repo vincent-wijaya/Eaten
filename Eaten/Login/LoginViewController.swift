@@ -1,5 +1,5 @@
 //
-//  CreateAccountViewController.swift
+//  LoginViewController.swift
 //  Eaten
 //
 //  Created by Vincent Wijaya on 26/4/2023.
@@ -24,26 +24,26 @@ class LoginViewController: UIViewController {
         let appDelegate = UIApplication.shared.delegate as? AppDelegate
         databaseController = appDelegate?.databaseController
 
-        // Do any additional setup after loading the view.
+        emailField.text = ""
+        passwordField.text = ""
     }
     
     override func viewWillAppear(_ animated: Bool) {
         handle = Auth.auth().addStateDidChangeListener { auth, user in
             
-            if let user = auth.currentUser {
-                print("Logged in")
-                
-                let currentUser = User()
-                currentUser.id = user.uid
-                self.databaseController?.currentUser = currentUser
-                
-                (self.databaseController as! FirebaseController).setupUserListener()
-                (self.databaseController as! FirebaseController).setupUserReviewListener()
-                
-                let tabBarController = self.storyboard?.instantiateViewController(identifier: "MainTabBarController")
-                self.navigationController?.pushViewController(tabBarController!, animated: false)
+            Task {
+                if let user = auth.currentUser {
+                    let currentUser = User()
+                    currentUser.id = user.uid
+                    self.databaseController?.currentUser = currentUser
+                    
+                    await (self.databaseController as! FirebaseController).fetchUserDetails()
+                    (self.databaseController as! FirebaseController).setupUserReviewListener()
+                    
+                    let tabBarController = self.storyboard?.instantiateViewController(identifier: "MainTabBarController")
+                    self.navigationController?.pushViewController(tabBarController!, animated: false)
+                }
             }
-
         }
     }
 
@@ -52,30 +52,20 @@ class LoginViewController: UIViewController {
     }
     
     
-    @IBAction func loginAccount(_ sender: Any) {
-        guard let email = emailField.text, isValidEmail(email) else {
+    @IBAction func loginTapped(_ sender: Any) {
+        var isValid = true
+        
+        guard let email = emailField.text?.lowercased(), isValidEmail(email) else {
+            displayMessage(title: "Empty Email", message: "Please enter a valid email")
             return
         }
         
         guard let password = passwordField.text else {
+            displayMessage(title: "Empty Password", message: "Please enter a password")
             return
         }
         
         let _ = databaseController?.signIn(email: email, password: password)
-    }
-    
-    /**
-            From https://stackoverflow.com/a/25471164
-     */
-    func isValidEmail(_ email: String) -> Bool {
-        let emailRegEx = "[A-Z0-9a-z._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,64}"
-
-        let emailPred = NSPredicate(format:"SELF MATCHES %@", emailRegEx)
-        return emailPred.evaluate(with: email)
-    }
-    
-    func isValidPassword(_ password: String) -> Bool {
-        return password.count >= 8
     }
 
     /*
@@ -88,4 +78,12 @@ class LoginViewController: UIViewController {
     }
     */
 
+    
+    // MARK - Miscellaneous
+    
+    func displayMessage(title: String, message: String) {
+        let alertController = UIAlertController(title: title, message: message, preferredStyle: .alert)
+        alertController.addAction(UIAlertAction(title: "Dismiss", style: .default, handler: nil))
+        self.present(alertController, animated: true, completion: nil)
+    }
 }
